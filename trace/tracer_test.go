@@ -16,3 +16,8 @@ func TestNew(t *testing.T) {
 		t.Errorf("'%s'という誤った文字列が出力されました", buf.String()) //もともとはt.Errorだが後ろにfをつけることで書式指定できる
 	}
 }
+
+func TestOff(t *testing.T) {
+	var silentTracer Tracer = Off()
+	silentTracer.Trace("データ")
+}
