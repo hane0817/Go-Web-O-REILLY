@@ -31,7 +31,7 @@ func MustAuth(handler http.Handler) http.Handler {
 	return &authHandler{next: handler}
 }
 
-// lginHandlerはサードパ＾ティへのログインの処理を受け持ちます
+// loginHandlerはサードパーティへのログインの処理を受け持ちます
 // パスの形式: /auth/{action}/{provider}
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	segs := strings.Split(r.URL.Path, "/")
