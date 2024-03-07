@@ -1,5 +1,5 @@
 .exe
 .mod
 .sum
-chat
 chat/main.go
+chat/chat.exe
