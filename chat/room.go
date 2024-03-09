@@ -6,11 +6,12 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/hane0817/Go-Web-O-REILLY.git/trace"
+	"github.com/stretchr/objx"
 )
 
 type room struct {
 	//forwardは他のクライアントに転送するためのメッセージを保持するチャネルです
-	forward chan []byte
+	forward chan *message
 	//joinはチャットルームに参加しようとしているクライアントのためのチャネルです
 	join chan *client
 	//leaveはチャットルームから退出しようとしているクライアントのためのチャネルです
@@ -24,7 +25,7 @@ type room struct {
 // newRoomはすぐに利用できるチャットルームを生成して返します
 func newRoom() *room {
 	return &room{
-		forward: make(chan []byte),
+		forward: make(chan *message),
 		join:    make(chan *client),
 		leave:   make(chan *client),
 		clients: make(map[*client]bool),
@@ -49,7 +50,7 @@ func (r *room) run() {
 			r.tracer.Trace("クライアントが退出しました")
 
 		case msg := <-r.forward:
-			r.tracer.Trace("メッセージを受信しました: ", string(msg))
+			r.tracer.Trace("メッセージを受信しました: ", msg.Message)
 			//全てのクライアントにメッセージを転送
 			for client := range r.clients {
 				select {
@@ -81,11 +82,20 @@ func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		log.Fatal("ServeHTTP:", err)
 		return
 	}
-	client := &client{
-		socket: socket,
-		send:   make(chan []byte, messageBufferSize),
-		room:   r,
+
+	authCookie, err := req.Cookie("auth")
+	if err != nil {
+		log.Fatal("クッキーの取得に失敗しました:", err)
+		return
 	}
+
+	client := &client{
+		socket:   socket,
+		send:     make(chan *message, messageBufferSize),
+		room:     r,
+		userData: objx.MustFromBase64(authCookie.Value),
+	}
+
 	r.join <- client
 	defer func() { r.leave <- client }()
 	go client.write()
